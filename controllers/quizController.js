@@ -3,6 +3,7 @@ const connection = require("../database");
 
 exports.getAllQuizes = (req, res, next) => {
     connection.query("SELECT * FROM quiz", function (err, data, fields) {
+        if (data.length === 0) return next(new AppError(err, 404))
         if (err) return next(new AppError(err));
         res.status(200).json({
             status: "success",
@@ -56,10 +57,11 @@ exports.updateQuiz = (req, res, next) => {
         return next(new AppError("No quiz id found", 404))
     }
     connection.query(
-        "UPDATE quiz SET description=?, name=?",
+        "UPDATE quiz SET description=?, name=? WHERE id=?",
         [
             req.body.description,
             req.body.name,
+            req.params.id,
         ],
         (err, data, fields) => {
             if (err) return next(new AppError(err, 500));
@@ -73,13 +75,13 @@ exports.updateQuiz = (req, res, next) => {
 
 exports.deleteQuiz = (req, res, next) => {
     if (!req.params.id) {
-        return next(new AppError("No quiz id found"))
+        return next(new AppError("No quiz id found", 404))
     }
     connection.query(
         "DELETE FROM quiz WHERE id=?",
         [req.params.id],
         function (err, fields) {
-            if (err) return next(new AppError(err, 500));
+            if (err) return next(new AppError(err, 500))
             res.status(201).json({
                 status: "success",
                 message: "quiz deleted",
